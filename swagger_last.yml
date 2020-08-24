@@ -1,0 +1,919 @@
+
+swagger: "2.0"
+info:
+  description: "описание методов для OTRS"
+  version: "1.0.0"
+  title: "OTRS API"
+  termsOfService: "http://swagger.io/terms/"
+  contact:
+    email: "ilyaksyonov@gmail.com"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "otrs.dev-mcx.ru"
+basePath: "/otrs/nph-genericinterface.pl/Webservice/api"
+tags:
+- name: "session"
+  description: "Сессии"
+- name: "ticket"
+  description: "Заявки"
+schemes:
+- "https"
+- "http"
+paths:
+
+  /Session:
+    post:
+      tags:
+      - "session"
+      summary: "Создать сессию"
+      description: ""
+      parameters:
+        - name: "json"
+          in: "body"
+          description: 'Передача учетных данных для авторизации'
+          schema:
+            type: "object"
+            required:
+              - "UserLogin"
+              - "Password"
+            properties:
+              UserLogin:
+                type: "string"
+                example: "admin"
+              Password:
+                type: "string"
+                example: "123"
+      responses:
+        '200':
+          description: "Сессия создана, возвращается SessionID"
+          schema:
+            type: "object"
+            required:
+              - "SessionID"
+            properties:
+              SessionID:
+                type: "string"
+                example: "Lh4GW4pvK35aiS6ubCP12kNWsMj7pmb8"
+  /Session/{SessionID}:
+    get:
+      tags:
+      - "session"
+      summary: "Получить сессию по SessionID"
+      description: ""
+      parameters:
+      - in: "path"
+        name: "SessionID"
+        type: "string"
+        required: true
+        description: "ID сессии"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/Session"
+  /Ticket:
+    post:
+      tags:
+      - "ticket"
+      summary: "Создание заявки"
+      description: "Используй UserLogin или CustomerUserLogin или SessionID, один из этих параметров обязателен\nQueueID или Queue\nLockID или Lock\nTypeID или Type\nServiceID или Service\nSLAID или SLA\nStateID или State\nPriorityID или Priority\nOwnerID или Owner\nResponsibleID или Responsible\nPendingTime - дата или Diff в минутах\n\nSenderTypeID или SenderType\n1\tagent\n2\tsystem\n3\tcustomer\n\nAutoResponseType или AutoResponseTypeID\n1\tauto reply\n2\tauto reject\n3\tauto follow up\n4\tauto reply/new ticke\n5auto remove"
+      parameters:
+        - name: "json"
+          in: "body"
+          description: 'Передача данных заявки'
+          schema:
+            $ref: "#/definitions/TicketCreateRequest"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/TicketCreateResponse"
+  /Ticket/{TicketID}:
+    get:
+      tags:
+      - "ticket"
+      summary: "Получение данных заявки"
+      description: "DynamicFields: 1 - включать DynamicFields в ответ\nExtended: 1 - включать дополнительные параметры (FirstLock, FirstResponse...)"
+      parameters:
+      - in: "path"
+        name: "TicketID"
+        type: "integer"
+        required: true
+        description: "ID заявки"
+      - in: "body"
+        name: "json"
+        description: 'Передача учетных данных для авторизации'
+        schema:
+          type: "object"
+          properties:
+            UserLogin:
+              type: "string"
+              example: "admin"
+            CustomerUserLogin:
+              type: "string"
+              example: "user"
+            SessionID:
+              type: "string"
+              example: "Lh4GW4pvK35aiS6ubCP12kNWsMj7pmb8"
+            Password:
+              type: "string"
+              example: "123"
+            DynamicFields:
+              type: "integer"
+              example: 1
+            Extended:
+              type: "integer"
+              example: 1
+
+            AllArticles:
+              type: "integer"
+              example: 1
+            ArticleSenderType:
+              type: 'array'
+              items:
+                type: "string"
+            ArticleOrder:
+              type: "string"
+              example: "DESC"
+            ArticleLimit:
+              type: "integer"
+            Attachments:
+              type: "integer"
+            GetAttachmentContents:
+              type: "integer"
+            HTMLBodyAsAttachment:
+              type: "integer"
+
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/TicketGetResponse"
+  /TicketSearch:
+    get:
+      tags:
+      - "ticket"
+      summary: "поиск заявок"
+      description: "\n\nДополнительные параметры (OlderMinutes|NewerMinutes)\nTicketEscalationTime...\nTicketEscalationUpdateTime...\nTicketEscalationResponseTime...\nTicketEscalationSolutionTime...\n\nSearchInArchive - AllTickets или ArchivedTickets"
+      parameters:
+      - in: "body"
+        name: "json"
+        schema:
+          type: "object"
+          properties:
+            TicketNumber:
+              type: "array"
+              items:
+                type: "string"
+            Title:
+              type: "array"
+              items:
+                type: "string"
+            Queues:
+              type: "array"
+              example: ['system queue', 'other queue']
+              items:
+                type: "string"
+            QueueIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            UseSubQueues:
+              type: "integer"
+            Types:
+              type: "array"
+              example: ['normal', 'change', 'incident']
+              items:
+                type: "string"
+            TypeIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            States:
+              type: "array"
+              example: ['new', 'open']
+              items:
+                type: "string"
+            StateIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            StateType:
+              type: "array"
+              example: ['open', 'new']
+              items:
+                type: "string"
+            StateTypeIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            Priority:
+              type: "array"
+              example: ['1 very low', '2 low', '3 normal']
+              items:
+                type: "string"
+            PriorityIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            Services:
+              type: "array"
+              example: ['Service A', 'Service B']
+              items:
+                type: "string"
+            ServiceIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            SLAs:
+              type: "array"
+              example: ['SLA 1', 'SLA 2']
+              items:
+                type: "string"
+            SLAIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            Locks:
+              type: "array"
+              example: ['unlock', 'lock']
+              items:
+                type: "string"
+            LockIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            OwnerIDs:
+              type: "array"
+              example: [1,2,3]
+              items:
+                type: "integer"
+            ResponsibleIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            WatchUserIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            CustomerID:
+              type: "array"
+              example: ['Company 1', 'Company 2']
+              items:
+                type: "string"
+            CustomerUserLogin:
+              type: "array"
+              example: ['user1@domain.com', 'user2']
+              items:
+                type: "string"
+            CreatedUserIDs:
+              type: "array"
+              example: [1,2,3]
+              items:
+                type: "integer"
+            CreatedTypes:
+              type: "array"
+              example: ['normal', 'change', 'incident']
+              items:
+                type: "string"
+            CreatedTypeIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            CreatedPriorities:
+              type: "array"
+              example: ['1 very low', '2 low', '3 normal']
+              items:
+                type: "string"
+            CreatedPriorityIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            CreatedStates:
+              type: "array"
+              example: ['new', 'open']
+              items:
+                type: "string"
+            CreatedStateIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            CreatedQueues:
+              type: "array"
+              example: ['system queue', 'other queue']
+              items:
+                type: "string"
+            CreatedQueueIDs:
+              type: "array"
+              example: [1, 2, 3]
+              items:
+                type: "integer"
+            DynamicField_FieldNameX:
+              type: "object"
+              properties:
+                Empty:
+                  type: "integer"
+                  example: 1
+                Equals:
+                  type: "string"
+                  example: 123
+                Like:
+                  type: "string"
+                  example: "value*"
+                GreaterThan:
+                  type: "string"
+                  example: "2001-01-01 01:01:01"
+                GreaterThanEquals:
+                  type: "string"
+                  example: "2001-01-01 01:01:01"
+                SmallerThan:
+                  type: "string"
+                  example: "2001-01-01 01:01:01"
+                SmallerThanEquals:
+                  type: "string"
+                  example: "2001-01-01 01:01:01"
+            MIMEBase_From:
+              type: "string"
+              example: '%spam@example.com%'
+            MIMEBase_To:
+              type: "string"
+              example: '%spam@example.com%'
+            MIMEBase_Cc:
+              type: "string"
+              example: '%spam@example.com%'
+            MIMEBase_Subject:
+              type: "string"
+              example: '%value%'
+            MIMEBase_Body:
+              type: "string"
+              example: '%value%'
+            AttachmentName:
+              type: "string"
+              example: '%anyfile.txt%'
+            FullTextIndex:
+              type: "integer"
+              example: 1
+            ContentSearch:
+              type: "string"
+              example: 'AND'
+            ConditionInline:
+              type: "integer"
+              example: 1
+            ArticleCreateTimeOlderMinutes:
+              type: "integer"
+              example: 60
+            ArticleCreateTimeNewerMinutes:
+              type: "integer"
+              example: 120
+            ArticleCreateTimeNewerDate:
+              type: "string"
+              example: "2006-01-09 00:00:01"
+            ArticleCreateTimeOlderDate:
+              type: "string"
+              example: "2006-01-19 23:59:59"
+            TicketCreateTimeOlderMinutes:
+              type: "integer"
+              example: 60
+            TicketCreateTimeNewerMinutes:
+              type: "integer"
+              example: 120
+            TicketCreateTimeNewerDate:
+              type: "string"
+              example: "2006-01-09 00:00:01"
+            TicketCreateTimeOlderDate:
+              type: "string"
+              example: "2006-01-19 23:59:59"
+            TicketChangeTimeOlderMinutes:
+              type: "integer"
+              example: 60
+            TicketChangeTimeNewerMinutes:
+              type: "integer"
+              example: 120
+            TicketLastChangeTimeOlderMinutes:
+              type: "integer"
+              example: 60
+            TicketLastChangeTimeNewerMinutes:
+              type: "integer"
+              example: 120
+            TicketLastChangeTimeNewerDate:
+              type: "string"
+              example: "2006-01-09 00:00:01"
+            TicketLastChangeTimeOlderDate:
+              type: "string"
+              example: "2006-01-19 23:59:59"
+            TicketChangeTimeNewerDate:
+              type: "string"
+              example: "2006-01-09 00:00:01"
+            TicketChangeTimeOlderDate:
+              type: "string"
+              example: "2006-01-19 23:59:59"
+            TicketCloseTimeOlderMinutes:
+              type: "integer"
+              example: 60
+            TicketCloseTimeNewerMinutes:
+              type: "integer"
+              example: 120
+            TicketCloseTimeNewerDate:
+              type: "string"
+              example: "2006-01-09 00:00:01"
+            TicketCloseTimeOlderDate:
+              type: "string"
+              example: "2006-01-19 23:59:59"
+            TicketPendingTimeOlderMinutes:
+              type: "integer"
+              example: 60
+            TicketPendingTimeNewerMinutes:
+              type: "integer"
+              example: 120
+            TicketPendingTimeNewerDate:
+              type: "string"
+              example: "2006-01-09 00:00:01"
+            TicketPendingTimeOlderDate:
+              type: "string"
+              example: "2006-01-19 23:59:59"
+            TicketEscalationTimeOlderMinutes:
+              type: "integer"
+              example: -60
+            TicketEscalationTimeNewerMinutes:
+              type: "integer"
+              example: -120
+            TicketEscalationTimeNewerDate:
+              type: "string"
+              example: "2006-01-09 00:00:01"
+            TicketEscalationTimeOlderDate:
+              type: "string"
+              example: "2006-01-19 23:59:59"
+            SearchInArchive:
+              type: "string"
+              example: "AllTickets"
+            OrderBy:
+              type: "string"
+              example: "Down"
+            SortBy:
+              type: "array"
+              example: ['Age', 'Type']
+              items:
+                type: "string"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            type: "object"
+            properties:
+              Success:
+                type: "integer"
+                example: 1
+              ErrorMessage:
+                type: "string"
+                example: ""
+              Data:
+                type: "object"
+                properties:
+                  TicketID:
+                    type: "array"
+                    example: [1,2,3]
+                    items:
+                      type: "integer"
+    patch:
+      tags:
+      - "ticket"
+      summary: "обновление заявки"
+      description: ""
+      parameters:
+        - name: "json"
+          in: "body"
+          description: 'Передача данных заявки'
+          schema:
+            $ref: "#/definitions/TicketCreateRequest"
+      responses:
+        "200":
+          description: "OK"
+          schema:
+            $ref: "#/definitions/TicketGetResponse"
+definitions:
+  TicketCreateRequest:
+    type: "object"
+    required:
+      - "UserLogin"
+      - "Password"
+    properties:
+      UserLogin:
+        type: "string"
+        example: "admin"
+      CustomerUserLogin:
+        type: "string"
+        example: "customer"
+      SessionID:
+        type: "string"
+        example: "Lh4GW4pvK35aiS6ubCP12kNWsMj7pmb8"
+      Ticket:
+        type: "object"
+        properties:
+          Title:
+            type: "string"
+            example: "Заголовок заявки"
+          QueueID:
+            type: "integer"
+          Queue:
+            type: "string"
+          LockID:
+            type: "integer"
+          Lock:
+            type: "string"
+          TypeID:
+            type: "integer"
+          Type:
+            type: "string"
+          ServiceID:
+            type: "integer"
+          Service:
+            type: "string"
+          SLAID:
+            type: "integer"
+          SLA:
+            type: "string"
+          StateID:
+            type: "integer"
+          State:
+            type: "string"
+          PriorityID:
+            type: "integer"
+          Priority:
+            type: "string"
+          OwnerID:
+            type: "integer"
+          Owner:
+            type: "string"
+          ResponsibleID:
+            type: "integer"
+          Responsible:
+            type: "string"
+          CustomerUser:
+            type: "string"
+            example: "some customer user login"
+          PendingTime:
+            type: "object"
+            properties:
+              Year:
+                type: "integer"
+                example: '2020'
+              Month:
+                type: "integer"
+                example: '09'
+              Day:
+                type: "integer"
+                example: '1'
+              Hour:
+                type: "integer"
+                example: '15'
+              Minute:
+                type: "integer"
+                example: '30'
+              Diff:
+                type: "integer"
+                example: '1000'
+      Article:
+        properties:
+          CommunicationChannel:
+            type: "string"
+            example: "Email"
+          CommunicationChannelID:
+            type: "integer"
+          IsVisibleForCustomer:
+            type: "integer"
+          SenderTypeID:
+            type: "integer"
+          SenderType:
+            type: "string"
+          From:
+            type: "string"
+          Subject:
+            type: "string"
+          Body:
+            type: "string"
+          ContentType:
+            type: "string"
+          MimeType:
+            type: "string"
+          Charset:
+            type: "string"
+          HistoryType:
+            type: "string"
+          HistoryComment:
+            type: "string"
+          TimeUnit:
+            type: "string"
+          NoAgentNotify:
+            type: "integer"
+          ForceNotificationToUserID:
+            type: "array"
+            items:
+              type: "integer"
+          ExcludeNotificationToUserID:
+            type: "array"
+            items:
+              type: "integer"
+          ExcludeMuteNotificationToUserID:
+            type: "array"
+            items:
+              type: "integer"
+      DynamicField:
+        type: "array"
+        items:
+          properties:
+            Name:
+              type: "string"
+              example: "DynamciField_Name1"
+            Value:
+              type: "string"
+              example: "value"
+      Attachment:
+        type: "array"
+        items:
+          properties:
+            Content:
+              type: "string"
+              example: "hello world"
+            ContentType:
+              type: "string"
+              example: "plain/text"
+            Filename:
+              type: "string"
+              example: "README.txt"
+  TicketGetResponse:
+    type: "object"
+    properties:
+      Success:
+        type: "integer"
+        example: 1
+      ErrorMessage:
+        type: "string"
+      Data:
+        type: "object"
+        properties:
+          Ticket:
+            type: "object"
+            properties:
+              TicketNumber:
+                type: "string"
+              Title:
+                type: "string"
+              TicketID:
+                type: "integer"
+              State:
+                type: "string"
+              StateID:
+                type: "integer"
+              StateType:
+                type: "string"
+              Lock:
+                type: "string"
+              LockID:
+                type: "integer"
+              Queue:
+                type: "string"
+              QueueID:
+                type: "integer"
+              CustomerID:
+                type: "string"
+              CustomerUserID:
+                type: "string"
+              Owner:
+                type: "string"
+              OwnerID:
+                type: "integer"
+              Type:
+                type: "string"
+              TypeID:
+                type: "integer"
+              SLA:
+                type: "string"
+              SLAID:
+                type: "integer"
+              Service:
+                type: "string"
+              ServiceID:
+                type: "integer"
+              Responsible:
+                type: "string"
+              ResponsibleID:
+                type: "integer"
+              Age:
+                type: "integer"
+              Created:
+                type: "string"
+                example: "2020-01-01 01:01:01"
+              CreatedBy:
+                type: "integer"
+              Changed:
+                type: "string"
+                example: "2020-01-01 01:01:01"
+              ChangedBy:
+                type: "integer"
+              ArchiveFlag:
+                type: "string"
+              TimeUnit:
+                type: "integer"
+              DynamicField:
+                type: "array"
+                items:
+                  properties:
+                    Name:
+                      type: "string"
+                      example: "DynamciField_Name1"
+                    Value:
+                      type: "string"
+                      example: "value"
+              EscalationResponseTime:
+                type: "integer"
+              EscalationUpdateTime:
+                type: "integer"
+              EscalationSolutionTime:
+                type: "integer"
+              EscalationDestinationIn:
+                type: "string"
+                example: "1h 4m"
+              EscalationDestinationTime:
+                type: "integer"
+              EscalationDestinationDate:
+                type: "string"
+                example: "2020-10-10 01:01:01"
+              EscalationTimeWorkingTime:
+                type: "integer"
+              EscalationTime:
+                type: "integer"
+              FirstResponseTimeEscalation:
+                type: "boolean"
+              FirstResponseTimeNotification:
+                type: "boolean"
+              FirstResponseTimeDestinationTime:
+                type: "integer"
+              FirstResponseTimeDestinationDate:
+                type: "integer"
+              FirstResponseTimeWorkingTime:
+                type: "integer"
+              FirstResponseTime:
+                type: "integer"
+              UpdateTimeEscalation:
+                type: "boolean"
+              UpdateTimeNotification:
+                type: "boolean"
+              UpdateTimeDestinationTime:
+                type: "integer"
+              UpdateTimeDestinationDate:
+                type: "string"
+                example: "2020-10-10 01:01:01"
+              UpdateTimeWorkingTime:
+                type: "integer"
+              UpdateTime:
+                type: "integer"
+              SolutionTimeEscalation:
+                type: "boolean"
+              SolutionTimeNotification:
+                type: "boolean"
+              SolutionTimeDestinationTime:
+                type: "integer"
+              SolutionTimeDestinationDate:
+                type: "string"
+                example: "2020-10-10 01:01:01"
+              SolutionTimeWorkingTime:
+                type: "integer"
+              SolutionTime:
+                type: "integer"
+              FirstResponse:
+                type: "integer"
+              FirstResponseInMin:
+                type: "integer"
+              FirstResponseDiffInMin:
+                type: "integer"
+              SolutionInMin:
+                type: "integer"
+              SolutionDiffInMin:
+                type: "integer"
+              FirstLock:
+                type: "integer"
+              Article:
+                type: "array"
+                items:
+                  properties:
+                    ArticleID:
+                      type: "integer"
+                    From:
+                      type: "string"
+                    To:
+                      type: "string"
+                    Cc:
+                      type: "string"
+                    Subject:
+                      type: "string"
+                    Body:
+                      type: "string"
+                    ReplyTo:
+                      type: "string"
+                    MessageID:
+                      type: "string"
+                    InReplyTo:
+                      type: "string"
+                    References:
+                      type: "string"
+                    SenderType:
+                      type: "string"
+                    SenderTypeID:
+                      type: "integer"
+                    IsVisibleForCustomer:
+                      type: "string"
+                    ContentType:
+                      type: "string"
+                    Charset:
+                      type: "string"
+                    MimeType:
+                      type: "string"
+                    IncomingTime:
+                      type: "string"
+                    TimeUnit:
+                      type: "integer"
+                    DynamicField:
+                      type: "array"
+                      items:
+                        properties:
+                          Name:
+                            type: "string"
+                            example: "DynamciField_Name1"
+                          Value:
+                            type: "string"
+                            example: "value"
+                    Attachment:
+                      type: "array"
+                      items:
+                        properties:
+                          Content:
+                            type: "string"
+                            example: "hello world"
+                          ContentAlternative:
+                            type: "string"
+                          ContentID:
+                            type: "string"
+                          ContentType:
+                            type: "string"
+                            example: "plain/text"
+                          FileID:
+                            type: "integer"
+                          Filename:
+                            type: "string"
+                            example: "README.txt"
+                          FilesizeRaw:
+                            type: "integer"
+  TicketCreateResponse:
+    type: "object"
+    properties:
+      Success:
+        type: "integer"
+        example: 1
+      ErrorMessage:
+        type: "string"
+      Data:
+        type: "object"
+        properties:
+          TicketID:
+            type: "integer"
+          TicketNumber:
+            type: "string"
+          ArticleID:
+            type: "integer"
+          Error:
+            type: "object"
+            properties:
+              ErrorCode:
+                type: "string"
+                example: "Ticket.Create.ErrorCode"
+              ErrorMessage:
+                type: "string"
+                example: "Error Description"
+  Session:
+    type: "object"
+    properties:
+      SessionData:
+        type: "array"
+        items:
+          type: "object"
+          properties:
+            Value:
+              type: "string"
+              example: "25"
+            Key:
+              type: "string"
+              example: "AdminCommunicationLogPageShown"
